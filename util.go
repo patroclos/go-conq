@@ -17,9 +17,11 @@ func IsTerm(f interface{}) bool {
 	return st.Mode()&os.ModeCharDevice == os.ModeCharDevice
 }
 
-var OSContext = Ctx{
-	In:   os.Stdin,
-	Out:  os.Stdout,
-	Err:  os.Stderr,
-	Args: os.Args,
+func OSContext() Ctx {
+	return Ctx{
+		In:   os.Stdin,
+		Out:  os.Stdout,
+		Err:  os.Stderr,
+		Args: os.Args[1:],
+	}
 }

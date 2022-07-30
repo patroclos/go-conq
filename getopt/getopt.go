@@ -5,13 +5,34 @@ import (
 	"strings"
 
 	"github.com/patroclos/go-conq"
+	"github.com/posener/complete"
 )
 
-func New() conq.OptionExtractor {
+func New() conq.Optioner {
 	return &getopt{}
 }
 
 type getopt struct{}
+
+func (*getopt) CompleteOptions(a complete.Args, opts ...conq.Opter) []string {
+	names := make([]string, 0, len(opts))
+	for _, opt := range opts {
+		o := opt.Opt()
+		flag := fmt.Sprintf("--%s", o.Name)
+		names = append(names, flag)
+
+		if o.Predict != nil && strings.HasPrefix(a.LastCompleted, "--") && !strings.Contains(a.LastCompleted, "=") {
+			// complete using o.Predict?
+			for _, pred := range o.Predict.Predict(a) {
+				names = append(names, pred)
+			}
+		}
+
+		if a.LastCompleted != flag {
+		}
+	}
+	return names
+}
 
 func (*getopt) ExtractOptions(ctx conq.Ctx, opts ...conq.Opter) (conq.Ctx, error) {
 	ctx.OptValues = make(map[string]any, len(opts))

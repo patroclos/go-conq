@@ -26,7 +26,9 @@ func ExampleCmd() {
 		},
 	}
 
-	err := conq.New(getopt.New(), nil).Execute(cmd, []string{"--depth", "500", "hello world"})
+	ctx := conq.OSContext()
+	ctx.Args = []string{"--depth", "500"}
+	err := conq.New(getopt.New(), nil).Execute(cmd, ctx)
 	if err != nil {
 		panic(err)
 	}

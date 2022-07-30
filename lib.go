@@ -3,8 +3,8 @@ package conq
 import (
 	"fmt"
 	"io"
-	"os"
 	"reflect"
+	"strings"
 
 	"github.com/alexflint/go-scalar"
 	"github.com/posener/complete"
@@ -36,32 +36,54 @@ type Opter interface {
 	Opt() O
 }
 
-// OptionExtractor provides extraction and completion for CLI options (eg. getopt style flags)
-// During completion, the OptionExtractor must determin which, if any, option is currently being edited
-// so that the commander can grab and use it's Predictor
-type OptionExtractor interface {
+// Optioner provides extraction and completion of CLI options.
+type Optioner interface {
 	ExtractOptions(Ctx, ...Opter) (Ctx, error)
+	CompleteOptions(complete.Args, ...Opter) []string
 }
 
-func New(o OptionExtractor, h Helper) Commander {
+func New(o Optioner, h Helper) Commander {
 	return Commander{o, h}
 }
 
 type Commander struct {
-	o OptionExtractor
+	o Optioner
 	h Helper
 }
 
-// TODO completion
-func (c Commander) Execute(cmd *Cmd, args []string) error {
-	ctx := Ctx{
-		In:   os.Stdin,
-		Out:  os.Stdout,
-		Err:  os.Stderr,
-		Args: os.Args,
+func (c Commander) doCompletion(cmd *Cmd, line string, point int) error {
+	if point >= 0 && point < len(line) {
+		line = line[:point]
 	}
+
+	a := complArgs(line)
+	cmd, path := c.resolveCmd(cmd, a.Completed)
+	a = sliceArgs(a, len(path))
+
+	// subcommand completion
+	var options []string = c.o.CompleteOptions(a, cmd.Opts...)
+	for _, sub := range cmd.Commands {
+		options = append(options, sub.Name)
+	}
+
+	for _, opt := range options {
+		if !strings.HasPrefix(opt, a.Last) {
+			continue
+		}
+		fmt.Println(opt)
+	}
+	return nil
+}
+
+func (c Commander) Execute(cmd *Cmd, ctx Ctx) error {
+	line, point, ok := completionContext()
+	if ok {
+		return c.doCompletion(cmd, line, point)
+	}
+
 	ctx.OptValues = map[string]any{}
-	cmd, ctx.Args = c.resolveCmd(cmd, args)
+	cmd, path := c.resolveCmd(cmd, ctx.Args)
+	ctx.Args = ctx.Args[len(path):]
 	ctx, err := c.o.ExtractOptions(ctx, cmd.Opts...)
 	if err != nil {
 		return fmt.Errorf("failed extracting options: %w", err)
@@ -80,9 +102,22 @@ func (c Commander) Execute(cmd *Cmd, args []string) error {
 	return cmd.Run(ctx)
 }
 
-// TODO
-func (c Commander) resolveCmd(cmd *Cmd, args []string) (*Cmd, []string) {
-	return cmd, args
+func (c Commander) resolveCmd(root *Cmd, args []string) (cmd *Cmd, path []*Cmd) {
+	cmd = root
+a:
+	if len(args) == 0 {
+		return
+	}
+	for _, x := range cmd.Commands {
+		if args[len(path)] != x.Name {
+			continue
+		}
+		path = append(path, cmd)
+		cmd = x
+		args = args[1:]
+		goto a
+	}
+	return cmd, path
 }
 
 type Opt[T any] O
