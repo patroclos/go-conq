@@ -16,6 +16,7 @@ type Cmd struct {
 	Run      func(Ctx) error
 	Help     func(Helper)
 	Opts     []Opter
+	Args     []Opter
 }
 
 type Ctx struct {
@@ -40,6 +41,50 @@ type Opter interface {
 type Optioner interface {
 	ExtractOptions(Ctx, ...Opter) (Ctx, error)
 	CompleteOptions(complete.Args, ...Opter) []string
+}
+
+type Opt[T any] O
+
+func (o Opt[T]) Get(c Ctx) (val T, err error) {
+	x, ok := c.OptValues[o.Name]
+	if !ok {
+		return val, fmt.Errorf("option %q not present", o.Name)
+	}
+	val, ok = x.(T)
+	if !ok {
+		return val, fmt.Errorf("value for option %q is of type %T, expected %T", o.Name, x, val)
+	}
+	return
+}
+
+func (o Opt[T]) Opt() O {
+	if o.Parse == nil {
+		o.Parse = func(s string) (interface{}, error) {
+			if !scalar.CanParse(reflect.TypeOf((*T)(nil)).Elem()) {
+				return nil, fmt.Errorf("cannot automatically parse non-scalar value into %q option", o.Name)
+			}
+			var x T
+			err := scalar.Parse(&x, s)
+			return x, err
+		}
+	}
+	return O(o)
+}
+
+type ReqOpt[T any] O
+
+func (o ReqOpt[T]) Get(c Ctx) (val T) {
+	val, err := Opt[T](o.Opt()).Get(c)
+	if err != nil {
+		panic(fmt.Sprintf("unexpected error accessing required option, this is likely a bug in the commander: %v", err))
+	}
+	return val
+}
+
+func (o ReqOpt[T]) Opt() O {
+	x := Opt[T](o).Opt()
+	x.Require = true
+	return x
 }
 
 func New(o Optioner, h Helper) Commander {
@@ -99,6 +144,23 @@ func (c Commander) Execute(cmd *Cmd, ctx Ctx) error {
 		}
 	}
 
+	for i, arg := range cmd.Args {
+		o := arg.Opt()
+		if len(ctx.Args) == 0 {
+			if o.Require {
+				return fmt.Errorf("missing required positional argument at position %d %q", i+1, o.Name)
+			}
+			break
+		}
+
+		val, err := o.Parse(ctx.Args[0])
+		if err != nil {
+			return fmt.Errorf("failed parsing argument %d %q: %w", i+1, o.Name, err)
+		}
+		ctx.OptValues[o.Name] = val
+		ctx.Args = ctx.Args[1:]
+	}
+
 	return cmd.Run(ctx)
 }
 
@@ -119,48 +181,3 @@ a:
 	}
 	return cmd, path
 }
-
-type Opt[T any] O
-
-func (o Opt[T]) Get(c Ctx) (val T, err error) {
-	x, ok := c.OptValues[o.Name]
-	if !ok {
-		return val, fmt.Errorf("option %q not present", o.Name)
-	}
-	val, ok = x.(T)
-	if !ok {
-		return val, fmt.Errorf("value for option %q is of type %T, expected %T", o.Name, x, val)
-	}
-	return
-}
-
-func (o Opt[T]) Opt() O {
-	if o.Parse == nil {
-		o.Parse = func(s string) (interface{}, error) {
-			if !scalar.CanParse(reflect.TypeOf((*T)(nil)).Elem()) {
-				return nil, fmt.Errorf("cannot automatically parse non-scalar value into %q option", o.Name)
-			}
-			var x T
-			err := scalar.Parse(&x, s)
-			return x, err
-		}
-	}
-	return O(o)
-}
-
-type ReqOpt[T any] O
-
-func (o ReqOpt[T]) Get(c Ctx) (val T) {
-	val, err := Opt[T](o.Opt()).Get(c)
-	if err != nil {
-		panic(fmt.Sprintf("unexpected error accessing required option, this is likely a bug in the commander: %v", err))
-	}
-	return val
-}
-
-func (o ReqOpt[T]) Opt() O {
-	return Opt[T](o).Opt()
-}
-
-// Helper is the io.Writer of structured help generation
-type Helper interface{}
