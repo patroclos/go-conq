@@ -95,6 +95,7 @@ a:
 				continue
 			}
 			targetOpt = &o
+			ctx.Args = ctx.Args[1:]
 			continue a
 		}
 
