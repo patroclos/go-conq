@@ -24,6 +24,7 @@ type Ctx struct {
 	Out, Err  io.Writer
 	Args      []string
 	OptValues map[string]any
+	Path      []*Cmd
 }
 
 type O struct {
@@ -120,15 +121,18 @@ func (c Commander) doCompletion(cmd *Cmd, line string, point int) error {
 	return nil
 }
 
-func (c Commander) Execute(cmd *Cmd, ctx Ctx) error {
+func (c Commander) Execute(root *Cmd, ctx Ctx) error {
 	line, point, ok := completionContext()
 	if ok {
-		return c.doCompletion(cmd, line, point)
+		return c.doCompletion(root, line, point)
 	}
 
 	ctx.OptValues = map[string]any{}
-	cmd, path := c.resolveCmd(cmd, ctx.Args)
+	cmd, path := c.resolveCmd(root, ctx.Args)
 	ctx.Args = ctx.Args[len(path):]
+	ctx.Path = make([]*Cmd, 1, len(path)+1)
+	ctx.Path[0] = root
+	ctx.Path = append(ctx.Path, path...)
 	ctx, err := c.o.ExtractOptions(ctx, cmd.Opts...)
 	if err != nil {
 		return fmt.Errorf("failed extracting options: %w", err)
