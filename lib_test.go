@@ -29,6 +29,7 @@ func ExampleCmd_Help() {
 		panic(err)
 	}
 	// Output: usage: app [options] query
+	// Commands: help
 	// Options:
 	// depth (required)
 	// path

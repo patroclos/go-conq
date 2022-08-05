@@ -39,6 +39,14 @@ func (basicHelper) Help(sub HelpSubject) (help string) {
 	}
 	b.WriteString("\n")
 
+	if len(sub.Cmd.Commands) > 0 {
+		fmt.Fprintf(&b, "Commands: %s", sub.Cmd.Commands[0].Name)
+		for _, c := range sub.Cmd.Commands[1:] {
+			fmt.Fprintf(&b, ", %s", c.Name)
+		}
+		b.WriteString("\n")
+	}
+
 	if len(sub.Cmd.Opts) == 0 {
 		return
 	}
