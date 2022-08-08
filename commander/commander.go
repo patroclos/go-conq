@@ -17,13 +17,14 @@ func New(o conq.Optioner, h aid.Helper) Commander {
 	return Commander{o, h}
 }
 
+// TODO: put completion into a subcommand, so its entirely optional and can be custom mounted so to speak
 func (c Commander) doCompletion(cmd *conq.Cmd, line string, point int, ctype comptype) error {
 	if point >= 0 && point < len(line) {
 		line = line[:point]
 	}
 
 	a := complArgs(line)
-	cmd, path := c.resolveCmd(cmd, a.Completed)
+	cmd, path := c.ResolveCmd(cmd, a.Completed)
 	a = sliceArgs(a, len(path))
 
 	// subcommand completion
@@ -48,7 +49,7 @@ func (c Commander) Execute(root *conq.Cmd, ctx conq.Ctx) error {
 	}
 
 	ctx.OptValues = map[string]any{}
-	cmd, path := c.resolveCmd(root, ctx.Args)
+	cmd, path := c.ResolveCmd(root, ctx.Args)
 	ctx.Args = ctx.Args[len(path):]
 	ctx.Path = make([]*conq.Cmd, 1, len(path)+1)
 	ctx.Path[0] = root
@@ -88,14 +89,14 @@ func (c Commander) Execute(root *conq.Cmd, ctx conq.Ctx) error {
 	return cmd.Run(ctx)
 }
 
-func (c Commander) resolveCmd(root *conq.Cmd, args []string) (cmd *conq.Cmd, path []*conq.Cmd) {
+func (c Commander) ResolveCmd(root *conq.Cmd, args []string) (cmd *conq.Cmd, path []*conq.Cmd) {
 	cmd = root
 a:
 	if len(args) == 0 {
 		return
 	}
 	for _, x := range cmd.Commands {
-		if args[len(path)] != x.Name {
+		if args[0] != x.Name {
 			continue
 		}
 		path = append(path, cmd)
