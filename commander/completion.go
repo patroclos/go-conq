@@ -1,4 +1,4 @@
-package conq
+package commander
 
 import (
 	"fmt"

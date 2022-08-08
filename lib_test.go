@@ -5,6 +5,7 @@ import (
 
 	"github.com/patroclos/go-conq"
 	"github.com/patroclos/go-conq/aid"
+	"github.com/patroclos/go-conq/commander"
 	"github.com/patroclos/go-conq/getopt"
 	"github.com/posener/complete"
 )
@@ -13,7 +14,7 @@ func ExampleCmd_Opts() {
 	cmd := makeCmd()
 	ctx := conq.OSContext()
 	ctx.Args = []string{"--depth", "500", "testerino"}
-	err := conq.New(getopt.New(), nil).Execute(cmd, ctx)
+	err := commander.New(getopt.New(), nil).Execute(cmd, ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -24,15 +25,15 @@ func ExampleCmd_Help() {
 	cmd := makeCmd()
 	ctx := conq.OSContext()
 	ctx.Args = []string{"help"}
-	err := conq.New(getopt.New(), nil).Execute(cmd, ctx)
+	err := commander.New(getopt.New(), nil).Execute(cmd, ctx)
 	if err != nil {
 		panic(err)
 	}
 	// Output: usage: app [options] query
 	// Commands: help
 	// Options:
-	// depth (required)
-	// path
+	// int     depth (required)
+	// string  path
 }
 
 func makeCmd() *conq.Cmd {

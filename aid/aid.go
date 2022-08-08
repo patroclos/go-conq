@@ -52,8 +52,19 @@ func (basicHelper) Help(sub HelpSubject) (help string) {
 	}
 
 	b.WriteString("Options:\n")
+	var longest int
 	for _, opt := range sub.Cmd.Opts {
 		o := opt.Opt()
+		if l := len(o.Type.Name()); longest < l {
+			longest = l
+		}
+	}
+	format := fmt.Sprintf("%%%dv  ", -longest)
+	for _, opt := range sub.Cmd.Opts {
+		o := opt.Opt()
+		if o.Type != nil {
+			fmt.Fprintf(&b, format, o.Type.Name())
+		}
 		switch o.Require {
 		case true:
 			fmt.Fprintf(&b, "%s (required)\n", o.Name)
