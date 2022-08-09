@@ -76,7 +76,7 @@ func (basicHelper) Help(sub HelpSubject) (help string) {
 	return
 }
 
-func NewHelp() *conq.Cmd {
+func HelpCommand() *conq.Cmd {
 	return &conq.Cmd{
 		Name: "help",
 		Run: func(c conq.Ctx) error {

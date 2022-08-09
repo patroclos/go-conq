@@ -45,7 +45,7 @@ func makeCmd() *conq.Cmd {
 		Name:     "app",
 		Opts:     []conq.Opter{OptDepth, OptPath},
 		Args:     []conq.Opter{ArgQuery},
-		Commands: []*conq.Cmd{aid.NewHelp()},
+		Commands: []*conq.Cmd{aid.HelpCommand()},
 		Run: func(c conq.Ctx) error {
 			depth := OptDepth.Get(c)
 			path, err := OptPath.Get(c)

@@ -23,6 +23,7 @@ type Ctx struct {
 	Args      []string
 	OptValues map[string]any
 	Path      []*Cmd
+	Com       Commander
 }
 
 type O struct {
@@ -31,6 +32,12 @@ type O struct {
 	Require bool
 	Parse   func(string) (interface{}, error)
 	Type    reflect.Type
+}
+
+type Commander interface {
+	ResolveCmd(root *Cmd, args []string) (cmd *Cmd, path []*Cmd)
+	Execute(root *Cmd, ctx Ctx) error
+	Optioner() Optioner
 }
 
 // This interface exists to facilitate the Opt[T] and ReqOpt[T] types with filter effects

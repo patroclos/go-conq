@@ -2,7 +2,6 @@ package commander
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/patroclos/go-conq"
 	"github.com/patroclos/go-conq/aid"
@@ -17,43 +16,16 @@ func New(o conq.Optioner, h aid.Helper) Commander {
 	return Commander{o, h}
 }
 
-// TODO: put completion into a subcommand, so its entirely optional and can be custom mounted so to speak
-func (c Commander) doCompletion(cmd *conq.Cmd, line string, point int, ctype comptype) error {
-	if point >= 0 && point < len(line) {
-		line = line[:point]
-	}
-
-	a := complArgs(line)
-	cmd, path := c.ResolveCmd(cmd, a.Completed)
-	a = sliceArgs(a, len(path))
-
-	// subcommand completion
-	var options []string = c.O.CompleteOptions(a, cmd.Opts...)
-	for _, sub := range cmd.Commands {
-		options = append(options, sub.Name)
-	}
-
-	for _, opt := range options {
-		if !strings.HasPrefix(opt, a.Last) {
-			continue
-		}
-		fmt.Println(opt)
-	}
-	return nil
+func (c Commander) Optioner() conq.Optioner {
+	return c.O
 }
 
 func (c Commander) Execute(root *conq.Cmd, ctx conq.Ctx) error {
-	line, point, ctype, ok := completionContext()
-	if ok {
-		return c.doCompletion(root, line, point, ctype)
-	}
-
 	ctx.OptValues = map[string]any{}
 	cmd, path := c.ResolveCmd(root, ctx.Args)
 	ctx.Args = ctx.Args[len(path):]
-	ctx.Path = make([]*conq.Cmd, 1, len(path)+1)
-	ctx.Path[0] = root
-	ctx.Path = append(ctx.Path, path...)
+	ctx.Path = path
+	ctx.Com = c
 	ctx, err := c.O.ExtractOptions(ctx, cmd.Opts...)
 	if err != nil {
 		return fmt.Errorf("failed extracting options: %w", err)

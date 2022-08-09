@@ -23,12 +23,7 @@ func (*getopt) CompleteOptions(a complete.Args, opts ...conq.Opter) []string {
 
 		if o.Predict != nil && strings.HasPrefix(a.LastCompleted, "--") && !strings.Contains(a.LastCompleted, "=") {
 			// complete using o.Predict?
-			for _, pred := range o.Predict.Predict(a) {
-				names = append(names, pred)
-			}
-		}
-
-		if a.LastCompleted != flag {
+			names = append(names, o.Predict.Predict(a)...)
 		}
 	}
 	return names
