@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/alexflint/go-scalar v1.1.0
 	github.com/posener/complete v1.2.3
+	gopkg.in/yaml.v2 v2.2.2
 )
 
 require (
