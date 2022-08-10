@@ -30,20 +30,24 @@ func (*getopt) CompleteOptions(a complete.Args, opts ...conq.Opter) []string {
 }
 
 func (*getopt) ExtractOptions(ctx conq.Ctx, opts ...conq.Opter) (conq.Ctx, error) {
-	ctx.OptValues = make(map[string]any, len(opts))
+	ctx.Values = make(map[string]any, len(opts))
+	ctx.Strings = make(map[string]string, len(opts))
 
 	var targetOpt *conq.O
 a:
 	for _, arg := range ctx.Args {
 		if targetOpt != nil {
-			if targetOpt.Parse != nil {
+			switch targetOpt.Parse {
+			case nil:
+				ctx.Values[targetOpt.Name] = arg
+				ctx.Strings[targetOpt.Name] = arg
+			default:
 				val, err := targetOpt.Parse(arg)
 				if err != nil {
 					return ctx, fmt.Errorf("parsing option %q failed: %w", targetOpt.Name, err)
 				}
-				ctx.OptValues[targetOpt.Name] = val
-			} else {
-				ctx.OptValues[targetOpt.Name] = arg
+				ctx.Values[targetOpt.Name] = val
+				ctx.Strings[targetOpt.Name] = arg
 			}
 			ctx.Args = ctx.Args[1:]
 			targetOpt = nil
@@ -68,17 +72,19 @@ a:
 				if o.Name != n {
 					continue
 				}
-				if o.Parse != nil {
+				switch o.Parse {
+				case nil:
+					ctx.Values[n] = v
+					ctx.Strings[n] = v
+				default:
 					v2, err := o.Parse(v)
 					if err != nil {
 						return ctx, fmt.Errorf("parsing option %q failed: %w", n, err)
 					}
-					ctx.OptValues[n] = v2
-					continue a
-				} else {
-					ctx.OptValues[n] = v
-					continue a
+					ctx.Values[n] = v2
+					ctx.Strings[n] = v
 				}
+				continue a
 			}
 
 			return ctx, fmt.Errorf("unrecognized option %q", n)

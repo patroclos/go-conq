@@ -182,7 +182,7 @@ func main() {
 			{Name: "bar"},
 		},
 	}
-	err := commander.New(getopt.New(), nil).Execute(testCmd, conq.OSContext())
+	err := commander.New(getopt.New(), aid.DefaultHelp).Execute(testCmd, conq.OSContext())
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}

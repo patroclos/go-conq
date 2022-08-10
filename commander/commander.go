@@ -20,8 +20,13 @@ func (c Commander) Optioner() conq.Optioner {
 	return c.O
 }
 
+func (c Commander) Helper() aid.Helper {
+	return c.H
+}
+
 func (c Commander) Execute(root *conq.Cmd, ctx conq.Ctx) error {
-	ctx.OptValues = map[string]any{}
+	ctx.Values = nil
+	ctx.Strings = nil
 	cmd, path := c.ResolveCmd(root, ctx.Args)
 	ctx.Args = ctx.Args[len(path):]
 	ctx.Path = path
@@ -36,7 +41,7 @@ func (c Commander) Execute(root *conq.Cmd, ctx conq.Ctx) error {
 		if !o.Require {
 			continue
 		}
-		if _, ok := ctx.OptValues[o.Name]; !ok {
+		if _, ok := ctx.Values[o.Name]; !ok {
 			return fmt.Errorf("missing required option %q", o.Name)
 		}
 	}
@@ -54,14 +59,14 @@ func (c Commander) Execute(root *conq.Cmd, ctx conq.Ctx) error {
 		if err != nil {
 			return fmt.Errorf("failed parsing argument %d %q: %w", i+1, o.Name, err)
 		}
-		ctx.OptValues[o.Name] = val
+		ctx.Values[o.Name] = val
 		ctx.Args = ctx.Args[1:]
 	}
 
 	return cmd.Run(ctx)
 }
 
-func (c Commander) ResolveCmd(root *conq.Cmd, args []string) (cmd *conq.Cmd, path []*conq.Cmd) {
+func (c Commander) ResolveCmd(root *conq.Cmd, args []string) (cmd *conq.Cmd, path conq.Pth) {
 	cmd = root
 a:
 	if len(args) == 0 {

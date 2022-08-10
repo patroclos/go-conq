@@ -18,13 +18,16 @@ type Cmd struct {
 }
 
 type Ctx struct {
-	In        io.Reader
-	Out, Err  io.Writer
-	Args      []string
-	OptValues map[string]any
-	Path      []*Cmd
-	Com       Commander
+	In       io.Reader
+	Out, Err io.Writer
+	Args     []string
+	Values   map[string]any
+	Strings  map[string]string
+	Path     Pth
+	Com      Commander
 }
+
+type Pth []*Cmd
 
 type O struct {
 	Name    string
@@ -35,7 +38,7 @@ type O struct {
 }
 
 type Commander interface {
-	ResolveCmd(root *Cmd, args []string) (cmd *Cmd, path []*Cmd)
+	ResolveCmd(root *Cmd, args []string) (cmd *Cmd, path Pth)
 	Execute(root *Cmd, ctx Ctx) error
 	Optioner() Optioner
 }
@@ -53,8 +56,10 @@ type Optioner interface {
 
 type Opt[T any] O
 
+type Opts []Opter
+
 func (o Opt[T]) Get(c Ctx) (val T, err error) {
-	x, ok := c.OptValues[o.Name]
+	x, ok := c.Values[o.Name]
 	if !ok {
 		return val, fmt.Errorf("option %q not present", o.Name)
 	}
@@ -63,6 +68,18 @@ func (o Opt[T]) Get(c Ctx) (val T, err error) {
 		return val, fmt.Errorf("value for option %q is of type %T, expected %T", o.Name, x, val)
 	}
 	return
+}
+
+func (o Opt[T]) Getp(c Ctx) (val *T, err error) {
+	x, ok := c.Values[o.Name]
+	if !ok {
+		return val, fmt.Errorf("option %q not present", o.Name)
+	}
+	v, ok := x.(T)
+	if !ok {
+		return val, fmt.Errorf("value for option %q is of type %T, expected %T", o.Name, x, val)
+	}
+	return &v, nil
 }
 
 func (o Opt[T]) Opt() O {
@@ -84,6 +101,14 @@ type ReqOpt[T any] O
 
 func (o ReqOpt[T]) Get(c Ctx) (val T) {
 	val, err := Opt[T](o.Opt()).Get(c)
+	if err != nil {
+		panic(fmt.Sprintf("unexpected error accessing required option, this is likely a bug in the commander: %v", err))
+	}
+	return val
+}
+
+func (o ReqOpt[T]) Getp(c Ctx) (val *T) {
+	val, err := Opt[T](o.Opt()).Getp(c)
 	if err != nil {
 		panic(fmt.Sprintf("unexpected error accessing required option, this is likely a bug in the commander: %v", err))
 	}

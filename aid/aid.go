@@ -51,16 +51,27 @@ func (basicHelper) Help(sub HelpSubject) (help string) {
 		return
 	}
 
+	var sorted []conq.Opter
+	var required []conq.Opter
+	for _, opt := range sub.Cmd.Opts {
+		if opt.Opt().Require {
+			required = append(required, opt)
+			continue
+		}
+		sorted = append(sorted, opt)
+	}
+	sorted = append(required, sorted...)
+	// required options sorted to top
 	b.WriteString("Options:\n")
 	var longest int
-	for _, opt := range sub.Cmd.Opts {
+	for _, opt := range sorted {
 		o := opt.Opt()
 		if l := len(o.Type.Name()); longest < l {
 			longest = l
 		}
 	}
 	format := fmt.Sprintf("%%%dv  ", -longest)
-	for _, opt := range sub.Cmd.Opts {
+	for _, opt := range sorted {
 		o := opt.Opt()
 		if o.Type != nil {
 			fmt.Fprintf(&b, format, o.Type.Name())
@@ -76,7 +87,7 @@ func (basicHelper) Help(sub HelpSubject) (help string) {
 	return
 }
 
-func HelpCommand() *conq.Cmd {
+func New() *conq.Cmd {
 	return &conq.Cmd{
 		Name: "help",
 		Run: func(c conq.Ctx) error {
@@ -95,6 +106,11 @@ func HelpCommand() *conq.Cmd {
 				return fmt.Errorf("attempted to resolve unknown command %q on %s", c.Args[0], subj.Cmd.Name)
 			}
 
+			// helper := DefaultHelp
+			if hl, ok := c.Com.(interface{ Helper() Helper }); ok {
+				fmt.Fprintf(c.Out, "%s\n", hl.Helper().Help(subj))
+				return nil
+			}
 			h := DefaultHelp.Help(subj)
 			fmt.Fprintf(c.Out, "%s\n", h)
 			return nil
