@@ -14,6 +14,7 @@ import (
 
 	"github.com/patroclos/go-conq"
 	"github.com/patroclos/go-conq/aid"
+	"github.com/patroclos/go-conq/aid/cmdhelp"
 	"github.com/patroclos/go-conq/commander"
 	"github.com/patroclos/go-conq/getopt"
 	"github.com/posener/complete"
@@ -176,7 +177,7 @@ func main() {
 			return nil
 		},
 		Commands: []*conq.Cmd{
-			aid.HelpCommand(),
+			cmdhelp.New(),
 			commander.CmdCompletion,
 			{Name: "foo", Commands: []*conq.Cmd{{Name: "baz"}}},
 			{Name: "bar"},
