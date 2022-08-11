@@ -2,3 +2,10 @@
 
 {{.Root.Name}} [commands] [options] arguments
 {{.Root.Name}} help [commands]
+
+{{if .Root.Commands }}
+Commands:
+{{ range $cmd := .Root.Commands -}}
+	- {{$cmd.Name }}
+{{end}}
+{{end}}

@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"crypto/x509"
+	"embed"
 	"encoding/pem"
 	"fmt"
 	"io"
@@ -114,6 +115,9 @@ func (c *AppConfig) UnmarshalText(txt []byte) error {
 	return yaml.Unmarshal(bytes, c)
 }
 
+//go:embed help/*
+var helpFs embed.FS
+
 func main() {
 	optPath := conq.ReqOpt[string](conq.O{
 		Name:    "path",
@@ -127,6 +131,9 @@ func main() {
 	optCfg := conq.Opt[AppConfig](O{Name: "config"})
 	optPrime := conq.ReqOpt[CryptoPrime](O{Name: "prime"})
 	optMac := conq.Opt[net.HardwareAddr](O{Name: "mac"})
+	helpCmd := cmdhelp.New(helpFs)
+	hCmd := cmdhelp.New(helpFs)
+	hCmd.Name = "-h"
 	testCmd := &conq.Cmd{
 		Name: "example",
 		Opts: []conq.Opter{optPath, optAddr, optCidr, optMime, optCert, optCfg, optPrime, optMac},
@@ -177,7 +184,8 @@ func main() {
 			return nil
 		},
 		Commands: []*conq.Cmd{
-			cmdhelp.New(),
+			helpCmd,
+			hCmd,
 			commander.CmdCompletion,
 			{Name: "foo", Commands: []*conq.Cmd{{Name: "baz"}}},
 			{Name: "bar"},
