@@ -10,13 +10,15 @@ import (
 	"github.com/patroclos/go-conq/aid"
 )
 
-func New(helpdir embed.FS) *conq.Cmd {
+func New(helpdir *embed.FS) *conq.Cmd {
 	return &conq.Cmd{
 		Name: "help",
 		Run: func(c conq.Ctx) error {
 			subj := aid.HelpSubject{Cmd: c.Path[0]}
-			if err := printSection(helpdir, c); err == nil {
-				return nil
+			if helpdir != nil {
+				if err := printSection(*helpdir, c); err == nil {
+					return nil
+				}
 			}
 		a:
 			for len(c.Args) > 0 {

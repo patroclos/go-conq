@@ -15,16 +15,19 @@ type Cmd struct {
 	Run      func(Ctx) error
 	Opts     []Opter
 	Args     []Opter
+	Env      []Opter
 }
 
 type Ctx struct {
 	In       io.Reader
 	Out, Err io.Writer
 	Args     []string
-	Values   map[string]any
-	Strings  map[string]string
-	Path     Pth
-	Com      Commander
+	// TODO: evaluate this. would require parsing the environment key=value slice eagerly
+	// Env      map[string]string
+	Values  map[string]any
+	Strings map[string]string
+	Path    Pth
+	Com     Commander
 }
 
 type Pth []*Cmd

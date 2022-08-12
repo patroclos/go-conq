@@ -5,6 +5,7 @@ import (
 
 	"github.com/patroclos/go-conq"
 	"github.com/patroclos/go-conq/aid"
+	"github.com/patroclos/go-conq/aid/cmdhelp"
 	"github.com/patroclos/go-conq/commander"
 	"github.com/patroclos/go-conq/getopt"
 	"github.com/posener/complete"
@@ -25,7 +26,7 @@ func ExampleCmd_Help() {
 	cmd := makeCmd()
 	ctx := conq.OSContext()
 	ctx.Args = []string{"help"}
-	err := commander.New(getopt.New(), nil).Execute(cmd, ctx)
+	err := commander.New(getopt.New(), aid.DefaultHelp).Execute(cmd, ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -45,7 +46,7 @@ func makeCmd() *conq.Cmd {
 		Name:     "app",
 		Opts:     []conq.Opter{OptDepth, OptPath},
 		Args:     []conq.Opter{ArgQuery},
-		Commands: []*conq.Cmd{aid.New()},
+		Commands: []*conq.Cmd{cmdhelp.New(nil)},
 		Run: func(c conq.Ctx) error {
 			depth := OptDepth.Get(c)
 			path, err := OptPath.Get(c)

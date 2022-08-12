@@ -2,6 +2,7 @@ package commander
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/patroclos/go-conq"
 	"github.com/patroclos/go-conq/aid"
@@ -44,6 +45,18 @@ func (c Commander) Execute(root *conq.Cmd, ctx conq.Ctx) error {
 		if _, ok := ctx.Values[o.Name]; !ok {
 			return fmt.Errorf("missing required option %q", o.Name)
 		}
+	}
+
+	for _, opt := range cmd.Env {
+		o := opt.Opt()
+		val, ok := os.LookupEnv(o.Name)
+		if !ok {
+			if o.Require {
+				return fmt.Errorf("missing required environment-variable: %q", o.Name)
+			}
+			continue
+		}
+		ctx.Values[o.Name] = val
 	}
 
 	for i, arg := range cmd.Args {

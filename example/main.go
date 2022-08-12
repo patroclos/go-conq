@@ -144,13 +144,16 @@ var optCfg = conq.Opt[AppConfig](O{Name: "config"})
 var optPrime = conq.ReqOpt[CryptoPrime](O{Name: "prime"})
 var optMac = conq.Opt[net.HardwareAddr](O{Name: "mac"})
 
+var envDebug = conq.Opt[string](O{Name: "CONQ_DEBUG"})
+
 func New() *conq.Cmd {
-	helpCmd := cmdhelp.New(helpFs)
-	hCmd := cmdhelp.New(helpFs)
+	helpCmd := cmdhelp.New(&helpFs)
+	hCmd := cmdhelp.New(&helpFs)
 	hCmd.Name = "-h"
 	return &conq.Cmd{
 		Name: "example",
 		Opts: []conq.Opter{optPath, optAddr, optCidr, optMime, optCert, optCfg, optPrime, optMac},
+		Env:  conq.Opts{envDebug},
 		Commands: []*conq.Cmd{
 			helpCmd,
 			hCmd,
@@ -174,6 +177,10 @@ func run(c conq.Ctx) error {
 
 	if ip, err := optAddr.Get(c); err == nil {
 		fmt.Fprintf(c.Err, "IP: %v (private? %v)\n", ip, ip.IsPrivate())
+	}
+
+	if debug, err := envDebug.Get(c); err == nil {
+		fmt.Fprintf(c.Err, "CONQ_DEBUG: %q\n", debug)
 	}
 
 	config, _ := optCfg.Get(c)
