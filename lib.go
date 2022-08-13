@@ -7,6 +7,7 @@ import (
 
 	"github.com/alexflint/go-scalar"
 	"github.com/posener/complete"
+	"golang.org/x/text/message"
 )
 
 type Cmd struct {
@@ -26,6 +27,7 @@ type Ctx struct {
 	// Env      map[string]string
 	Values  map[string]any
 	Strings map[string]string
+	Printer *message.Printer
 	Path    Pth
 	Com     Commander
 }
@@ -33,6 +35,7 @@ type Ctx struct {
 type Pth []*Cmd
 
 type O struct {
+	// a comma-separated list of name and shorthands
 	Name    string
 	Predict complete.Predictor
 	Require bool

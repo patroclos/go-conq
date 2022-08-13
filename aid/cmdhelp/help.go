@@ -10,16 +10,24 @@ import (
 	"github.com/patroclos/go-conq/aid"
 )
 
+var OptVerbose = conq.Opt[bool](conq.O{Name: "verbose,v"})
+
 func New(helpdir *embed.FS) *conq.Cmd {
 	return &conq.Cmd{
 		Name: "help",
+		Opts: conq.Opts{OptVerbose},
 		Run: func(c conq.Ctx) error {
+			if _, err := OptVerbose.Get(c); err == nil {
+				c.Printer.Fprintf(c.Err, "VERBOSE MODE Command:%q Values: %v\n", c.Path[len(c.Path)-1].Name, c.Values)
+			}
+
 			subj := aid.HelpSubject{Cmd: c.Path[0]}
 			if helpdir != nil {
 				if err := printSection(*helpdir, c); err == nil {
 					return nil
 				}
 			}
+
 		a:
 			for len(c.Args) > 0 {
 				for _, cmd := range subj.Cmd.Commands {

@@ -2,6 +2,7 @@ package getopt
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/patroclos/go-conq"
@@ -53,6 +54,48 @@ a:
 			targetOpt = nil
 			continue
 		}
+
+		if len(arg) == 0 {
+			ctx.Args = ctx.Args[1:]
+			continue
+		}
+
+		for _, opt := range opts {
+			o := opt.Opt()
+			for _, name := range strings.Split(o.Name, ",") {
+				switch len(name) {
+				case 0:
+					return ctx, fmt.Errorf("option %q has empty name", o.Name)
+				case 1: // shorthand (flag or value)
+					// TODO: also check for empty struct, but let empty interface be a string
+					if arg != fmt.Sprintf("-%s", name) {
+						continue
+					}
+					if o.Type.Kind() == reflect.Bool {
+						// nice to have: we still might want to swallow true/false/1/0 args following this
+						ctx.Args = ctx.Args[1:]
+						ctx.Strings[o.Name] = ""
+						ctx.Values[o.Name] = true
+						continue a
+					}
+
+					if len(ctx.Args) == 1 {
+						return ctx, fmt.Errorf("missing value for option %q", o.Name)
+					}
+
+					value, err := o.Parse(ctx.Args[1])
+					if err != nil {
+						return ctx, fmt.Errorf("failed reading option %q: %w", o.Name, err)
+					}
+					ctx.Strings[o.Name] = ctx.Args[1]
+					ctx.Values[o.Name] = value
+					ctx.Args = ctx.Args[2:]
+					continue a
+				}
+			}
+		}
+
+		// TODO: iterate over options earlier and check for shorthands
 		if !strings.HasPrefix(arg, "--") {
 			break
 		}
@@ -69,9 +112,17 @@ a:
 
 			for _, opt := range opts {
 				o := opt.Opt()
-				if o.Name != n {
+				var match string
+				for _, name := range strings.Split(o.Name, ",") {
+					if name == n {
+						match = name
+						break
+					}
+				}
+				if match == "" {
 					continue
 				}
+
 				switch o.Parse {
 				case nil:
 					ctx.Values[n] = v
@@ -92,12 +143,29 @@ a:
 
 		for _, opt := range opts {
 			o := opt.Opt()
-			if name != o.Name {
+			var match string
+			for _, oname := range strings.Split(o.Name, ",") {
+				if name == oname {
+					match = oname
+					break
+				}
+			}
+			if match == "" {
 				continue
 			}
-			targetOpt = &o
-			ctx.Args = ctx.Args[1:]
-			continue a
+
+			switch o.Type.Kind() {
+			case reflect.Bool:
+				targetOpt = nil
+				ctx.Args = ctx.Args[1:]
+				ctx.Strings[o.Name] = ""
+				ctx.Values[o.Name] = true
+				continue a
+			default:
+				targetOpt = &o
+				ctx.Args = ctx.Args[1:]
+				continue a
+			}
 		}
 
 		return ctx, fmt.Errorf("unrecognized option %q", name)
