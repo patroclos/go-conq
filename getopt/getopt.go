@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/patroclos/go-conq"
-	"github.com/posener/complete"
+	"github.com/patroclos/go-conq/completion"
 )
 
 func New() conq.Optioner {
@@ -15,16 +15,25 @@ func New() conq.Optioner {
 
 type getopt struct{}
 
-func (*getopt) CompleteOptions(a complete.Args, opts ...conq.Opter) []string {
+func (*getopt) CompleteOptions(ctx completion.Context, opts ...conq.Opter) []string {
+	a := ctx.Args
 	names := make([]string, 0, len(opts))
 	for _, opt := range opts {
 		o := opt.Opt()
-		flag := fmt.Sprintf("--%s", o.Name)
-		names = append(names, flag)
 
-		if o.Predict != nil && strings.HasPrefix(a.LastCompleted, "--") && !strings.Contains(a.LastCompleted, "=") {
-			// complete using o.Predict?
-			names = append(names, o.Predict.Predict(a)...)
+		for _, name := range strings.Split(o.Name, ",") {
+			if len(name) == 1 {
+				names = append(names, fmt.Sprintf("-%s", name))
+				continue
+			}
+			names = append(names, fmt.Sprintf("--%s", name))
+
+			lastCompIsFlag := strings.HasPrefix(a.LastCompleted, "--")
+			wasAssign := strings.Contains(a.LastCompleted, "=")
+			if o.Predict != nil && lastCompIsFlag && !wasAssign {
+				// complete using o.Predict?
+				names = append(names, o.Predict.Predict(a)...)
+			}
 		}
 	}
 	return names
@@ -63,11 +72,7 @@ a:
 		for _, opt := range opts {
 			o := opt.Opt()
 			for _, name := range strings.Split(o.Name, ",") {
-				switch len(name) {
-				case 0:
-					return ctx, fmt.Errorf("option %q has empty name", o.Name)
-				case 1: // shorthand (flag or value)
-					// TODO: also check for empty struct, but let empty interface be a string
+				if len(name) == 1 {
 					if arg != fmt.Sprintf("-%s", name) {
 						continue
 					}
@@ -83,13 +88,8 @@ a:
 						return ctx, fmt.Errorf("missing value for option %q", o.Name)
 					}
 
-					value, err := o.Parse(ctx.Args[1])
-					if err != nil {
-						return ctx, fmt.Errorf("failed reading option %q: %w", o.Name, err)
-					}
-					ctx.Strings[o.Name] = ctx.Args[1]
-					ctx.Values[o.Name] = value
-					ctx.Args = ctx.Args[2:]
+					targetOpt = &o
+					ctx.Args = ctx.Args[1:]
 					continue a
 				}
 			}

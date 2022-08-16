@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/patroclos/go-conq"
+	"github.com/patroclos/go-conq/completion"
 )
 
 var CmdCompletion *conq.Cmd = &conq.Cmd{
@@ -13,12 +14,14 @@ var CmdCompletion *conq.Cmd = &conq.Cmd{
 		line, point, ctype, ok := completionContext()
 		// not in completion mode, show install instructions
 		if !ok {
-			var pth []string
-			for _, x := range c.Path {
-				pth = append(pth, x.Name)
+			var pth strings.Builder
+			pth.WriteString(c.Path[0].Name)
+			for _, x := range c.Path[1:] {
+				fmt.Fprintf(&pth, " %s", x.Name)
 			}
+			pth.WriteString(" completion")
 
-			fmt.Fprintf(c.Out, "complete -C %+v\n", c.Path)
+			fmt.Fprintf(c.Out, "complete -C %q %s\n", pth.String(), c.Path[0].Name)
 			return nil
 		}
 		return doCompletion(c.Com, c.Path[0], line, point, ctype)
@@ -33,11 +36,17 @@ func doCompletion(com conq.Commander, cmd *conq.Cmd, line string, point int, cty
 	}
 
 	a := complArgs(line)
-	cmd, path := com.ResolveCmd(cmd, a.Completed)
-	a = sliceArgs(a, len(path))
+
+	coco := conq.OSContext()
+	coco.Args = a.Completed
+	coco = com.ResolveCmd(cmd, coco)
 
 	// subcommand completion
-	var options []string = com.Optioner().CompleteOptions(a, cmd.Opts...)
+	a = sliceArgs(a, len(coco.Path)-1)
+	cc := completion.Context{
+		Args: a,
+	}
+	var options []string = com.Optioner().CompleteOptions(cc, cmd.Opts...)
 	if len(options) == 0 {
 		for _, sub := range cmd.Commands {
 			options = append(options, sub.Name)

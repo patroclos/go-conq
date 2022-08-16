@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/alexflint/go-scalar"
+	"github.com/patroclos/go-conq/completion"
 	"github.com/posener/complete"
 	"golang.org/x/text/message"
 )
@@ -17,6 +18,12 @@ type Cmd struct {
 	Opts     []Opter
 	Args     []Opter
 	Env      []Opter
+	Version  string
+}
+
+func (c Cmd) WithName(name string) Cmd {
+	c.Name = name
+	return c
 }
 
 type Ctx struct {
@@ -43,8 +50,13 @@ type O struct {
 	Type    reflect.Type
 }
 
+func (o O) WithName(name string) O {
+	o.Name = name
+	return o
+}
+
 type Commander interface {
-	ResolveCmd(root *Cmd, args []string) (cmd *Cmd, path Pth)
+	ResolveCmd(root *Cmd, ctx Ctx) Ctx
 	Execute(root *Cmd, ctx Ctx) error
 	Optioner() Optioner
 }
@@ -57,7 +69,7 @@ type Opter interface {
 // Optioner provides extraction and completion of CLI options.
 type Optioner interface {
 	ExtractOptions(Ctx, ...Opter) (Ctx, error)
-	CompleteOptions(complete.Args, ...Opter) []string
+	CompleteOptions(completion.Context, ...Opter) []string
 }
 
 type Opt[T any] O

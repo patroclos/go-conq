@@ -2,9 +2,11 @@ package conq
 
 import (
 	"io/fs"
+	"log"
 	"os"
 
 	"github.com/Xuanwo/go-locale"
+	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
 
@@ -33,7 +35,8 @@ func OSContext() Ctx {
 func ctxPrinter() *message.Printer {
 	tags, err := locale.DetectAll()
 	if err != nil {
-		return nil
+		log.Println("fallback english")
+		return message.NewPrinter(language.English)
 	}
 	names := make([]string, len(tags))
 	for i, t := range tags {

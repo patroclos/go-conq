@@ -130,8 +130,8 @@ var optMac = conq.Opt[net.HardwareAddr](O{Name: "mac"})
 var envDebug = conq.Opt[string](O{Name: "CONQ_DEBUG"})
 
 func New() *conq.Cmd {
-	helpCmd := cmdhelp.New(&helpFs)
-	hCmd := cmdhelp.New(&helpFs)
+	helpCmd := cmdhelp.New(helpFs)
+	hCmd := cmdhelp.New(helpFs)
 	hCmd.Name = "-h"
 	return &conq.Cmd{
 		Name: "example",

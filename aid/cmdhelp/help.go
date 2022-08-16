@@ -1,8 +1,8 @@
 package cmdhelp
 
 import (
-	"embed"
 	"fmt"
+	"io/fs"
 	"strings"
 	"text/template"
 
@@ -12,7 +12,7 @@ import (
 
 var OptVerbose = conq.Opt[bool](conq.O{Name: "verbose,v"})
 
-func New(helpdir *embed.FS) *conq.Cmd {
+func New(helpdir fs.FS) *conq.Cmd {
 	return &conq.Cmd{
 		Name: "help",
 		Opts: conq.Opts{OptVerbose},
@@ -23,7 +23,7 @@ func New(helpdir *embed.FS) *conq.Cmd {
 
 			subj := aid.HelpSubject{Cmd: c.Path[0]}
 			if helpdir != nil {
-				if err := printSection(*helpdir, c); err == nil {
+				if err := printSection(helpdir, c); err == nil {
 					return nil
 				}
 			}
@@ -51,8 +51,25 @@ func New(helpdir *embed.FS) *conq.Cmd {
 	}
 }
 
-func printSection(fs embed.FS, c conq.Ctx) error {
-	tmpl, err := template.ParseFS(fs, "help/*.tmpl")
+func printSection(dir fs.FS, c conq.Ctx) error {
+	var paths []string
+	fs.WalkDir(dir, "help", func(path string, d fs.DirEntry, err error) error {
+		if d.IsDir() {
+			if !strings.HasPrefix(path, "help") {
+				return fs.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(path, ".tmpl") {
+			return nil
+		}
+		paths = append(paths, path)
+		return nil
+	})
+	if len(paths) == 0 {
+		return fmt.Errorf("no sections found")
+	}
+	tmpl, err := template.ParseFS(dir, paths...)
 	if err != nil {
 		fmt.Fprintf(c.Err, "%v\n", err)
 		return fmt.Errorf("failed parsing help-templates: %w", err)
