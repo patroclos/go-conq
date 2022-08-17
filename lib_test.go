@@ -42,9 +42,9 @@ func ExampleDefaultHelp() {
 }
 
 func makeCmd() *conq.Cmd {
-	var OptDepth = conq.ReqOpt[int](conq.O{Name: "depth"})
-	var OptPath = conq.Opt[string](conq.O{Name: "path", Predict: complete.PredictAnything})
-	var ArgQuery = conq.ReqOpt[string](conq.O{Name: "query"})
+	var OptDepth = conq.ReqOpt[int]{Name: "depth"}
+	var OptPath = conq.Opt[string]{Name: "path", Predict: complete.PredictAnything}
+	var ArgQuery = conq.ReqOpt[string]{Name: "query"}
 
 	return &conq.Cmd{
 		Name:     "app",

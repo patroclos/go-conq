@@ -38,8 +38,6 @@ func main() {
 	}
 }
 
-type O = conq.O
-
 type CIDR struct {
 	IP  net.IP
 	Net *net.IPNet
@@ -118,16 +116,16 @@ var optPath = conq.ReqOpt[string](conq.O{
 })
 
 // the default parser injected by the conq.Opt type supports types implementing encoding.TextUnmarshaler
-var OptConfig = conq.Opt[AppConfigFile](O{Name: "config"})
-var optAddr = conq.Opt[net.IP](O{Name: "addr"})
-var optCidr = conq.Opt[CIDR](O{Name: "cidr"})
-var optMime = conq.Opt[MIME](O{Name: "mime"})
-var optCert = conq.Opt[Cert](O{Name: "cert"})
-var optCfg = conq.Opt[AppConfigFile](O{Name: "config"})
-var optPrime = conq.ReqOpt[CryptoPrime](O{Name: "prime"})
-var optMac = conq.Opt[net.HardwareAddr](O{Name: "mac"})
+var OptConfig = conq.Opt[AppConfigFile]{Name: "config"}
+var optAddr = conq.Opt[net.IP]{Name: "addr"}
+var optCidr = conq.Opt[CIDR]{Name: "cidr"}
+var optMime = conq.Opt[MIME]{Name: "mime"}
+var optCert = conq.Opt[Cert]{Name: "cert"}
+var optCfg = conq.Opt[AppConfigFile]{Name: "config"}
+var optPrime = conq.ReqOpt[CryptoPrime]{Name: "prime"}
+var optMac = conq.Opt[net.HardwareAddr]{Name: "mac"}
 
-var envDebug = conq.Opt[string](O{Name: "CONQ_DEBUG"})
+var envDebug = conq.Opt[string]{Name: "CONQ_DEBUG"}
 
 func New() *conq.Cmd {
 	helpCmd := cmdhelp.New(helpFs)

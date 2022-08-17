@@ -10,7 +10,7 @@ import (
 	"github.com/patroclos/go-conq/aid"
 )
 
-var OptVerbose = conq.Opt[bool](conq.O{Name: "verbose,v"})
+var OptVerbose = conq.Opt[bool]{Name: "verbose,v"}
 
 func New(helpdir fs.FS) *conq.Cmd {
 	return &conq.Cmd{
