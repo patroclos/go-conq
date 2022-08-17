@@ -89,6 +89,7 @@ func printSection(dir fs.FS, c conq.Ctx) error {
 	return err
 }
 
+// HelpContext is the input for help-templates
 type HelpContext conq.Ctx
 
 func (c HelpContext) Root() *conq.Cmd {

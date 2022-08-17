@@ -11,48 +11,32 @@ import (
 	"golang.org/x/text/message"
 )
 
+// Cmd is a node in a rooted node tree describing a command-hierarchy.
 type Cmd struct {
 	Name     string
 	Commands []*Cmd
 	Run      func(Ctx) error
-	Opts     []Opter
-	Args     []Opter
-	Env      []Opter
+	Opts     Opts
+	Args     Opts
+	Env      Opts
 	Version  string
-}
-
-func (c Cmd) WithName(name string) Cmd {
-	c.Name = name
-	return c
-}
-
-type Ctx struct {
-	In       io.Reader
-	Out, Err io.Writer
-	Args     []string
-	// TODO: evaluate this. would require parsing the environment key=value slice eagerly
-	// Env      map[string]string
-	Values  map[string]any
-	Strings map[string]string
-	Printer *message.Printer
-	Path    Pth
-	Com     Commander
 }
 
 type Pth []*Cmd
 
-type O struct {
-	// a comma-separated list of name and shorthands
-	Name    string
-	Predict complete.Predictor
-	Require bool
-	Parse   func(string) (interface{}, error)
-	Type    reflect.Type
-}
-
-func (o O) WithName(name string) O {
-	o.Name = name
-	return o
+// Ctx is the context in which a command (Cmd) runs.  It contains the std-streams,
+// arguments (options extracted before calling Cmd.Run), option-values, the path
+// within the command-tree this invocation is located in and a locale-aware
+// message-printer.
+type Ctx struct {
+	In       io.Reader
+	Out, Err io.Writer
+	Args     []string
+	Values   map[string]any
+	Strings  map[string]string
+	Printer  *message.Printer
+	Path     Pth
+	Com      Commander
 }
 
 type Commander interface {
@@ -61,17 +45,44 @@ type Commander interface {
 	Optioner() Optioner
 }
 
-// This interface exists to facilitate the Opt[T] and ReqOpt[T] types with filter effects
-type Opter interface {
-	Opt() O
-}
-
 // Optioner provides extraction and completion of CLI options.
 type Optioner interface {
 	ExtractOptions(Ctx, ...Opter) (Ctx, error)
 	CompleteOptions(completion.Context, ...Opter) []string
 }
 
+// This interface exists to facilitate the Opt[T] and ReqOpt[T] types with filter effects
+type Opter interface {
+	Opt() O
+}
+
+// O is a descriptor for command-parameters (options, positional arguments or environment variables)
+type O struct {
+	// a comma-separated list of at least one name followed by aliases
+	Name string
+	// should invoking a command fail, if this option isn't set?
+	Require bool
+	// a parser for the string extracted from the shell arguments
+	Parse func(string) (interface{}, error)
+	// describes the type of results returned by Parse
+	Type reflect.Type
+	// shell-completion
+	Predict complete.Predictor
+}
+
+func (o O) WithName(name string) O {
+	o.Name = name
+	return o
+}
+
+// Opt[T any] wraps a base-option (usually only containing a name) in an Opter
+// interface, which will apply defaults to O.Parse and O.Type values.
+// The default O.Parse implementation will use the github.com/alexflint/go-scalar
+// package to parse a (value T) from a string.  The default implementations
+// supports the encoding.TextUnmarshaler interface.
+// Opt[T] is meant both as the definition for the option and as the access-hatch
+// for it's values, so it provides `Get(Ctx)(T,error)` and `Getp(Ctx)(*T, error)`
+// to access the options value or pointer to it from the Ctx.Values map.
 type Opt[T any] O
 
 type Opts []Opter
@@ -101,20 +112,26 @@ func (o Opt[T]) Getp(c Ctx) (val *T, err error) {
 }
 
 func (o Opt[T]) Opt() O {
+	typ := reflect.TypeOf((*T)(nil)).Elem()
 	if o.Parse == nil {
 		o.Parse = func(s string) (interface{}, error) {
-			if !scalar.CanParse(reflect.TypeOf((*T)(nil)).Elem()) {
+			if !scalar.CanParse(typ) {
 				return nil, fmt.Errorf("cannot automatically parse non-scalar value into %q option", o.Name)
 			}
-			var x T
-			err := scalar.Parse(&x, s)
-			return x, err
+			var val T
+			err := scalar.Parse(&val, s)
+			return val, err
 		}
 	}
-	o.Type = reflect.TypeOf((*T)(nil)).Elem()
+	o.Type = typ
 	return O(o)
 }
 
+// ReqOpt[T any] is a simple wrapper for Opt[T].  It's Opter implementation sets
+// the O.Require to true.  Assuming the Cmd has been setup correctly we can now
+// know for sure that the Ctx is going to have a value for this option.  That's
+// why the `Get(Ctx)T` and `Getp(Ctx)*T` have been simplified from their counterparts
+// in Opt[T]
 type ReqOpt[T any] O
 
 func (o ReqOpt[T]) Get(c Ctx) (val T) {

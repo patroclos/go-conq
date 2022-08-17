@@ -12,19 +12,21 @@ var CmdCompletion *conq.Cmd = &conq.Cmd{
 	Name: "completion",
 	Run: func(c conq.Ctx) error {
 		line, point, ctype, ok := completionContext()
-		// not in completion mode, show install instructions
-		if !ok {
-			var pth strings.Builder
-			pth.WriteString(c.Path[0].Name)
-			for _, x := range c.Path[1:] {
-				fmt.Fprintf(&pth, " %s", x.Name)
-			}
-			pth.WriteString(" completion")
-
-			fmt.Fprintf(c.Out, "complete -C %q %s\n", pth.String(), c.Path[0].Name)
-			return nil
+		// in completion mode, show install instructions
+		if ok {
+			return doCompletion(c.Com, c.Path[0], line, point, ctype)
 		}
-		return doCompletion(c.Com, c.Path[0], line, point, ctype)
+
+		// show some installation instructions and exit
+		var pth strings.Builder
+		pth.WriteString(c.Path[0].Name)
+		for _, x := range c.Path[1:] {
+			fmt.Fprintf(&pth, " %s", x.Name)
+		}
+		pth.WriteString(" completion")
+
+		fmt.Fprintf(c.Out, "complete -C %q %s\n", pth.String(), c.Path[0].Name)
+		return nil
 	},
 }
 
@@ -57,6 +59,8 @@ func doCompletion(com conq.Commander, cmd *conq.Cmd, line string, point int, cty
 		if !strings.HasPrefix(opt, a.Last) {
 			continue
 		}
+		// TODO: return values and let CmdCompletion.Run use the context-utilities
+		// to print and filter options.
 		fmt.Println(opt)
 	}
 	return nil

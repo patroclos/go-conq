@@ -22,7 +22,8 @@ func ExampleCmd_Opts() {
 	// Output: Doing something to depth:500 in path:"default"
 	// Query: "testerino"
 }
-func ExampleCmd_Help() {
+
+func ExampleDefaultHelp() {
 	cmd := makeCmd()
 	ctx := conq.OSContext()
 	ctx.Args = []string{"help"}
@@ -35,6 +36,9 @@ func ExampleCmd_Help() {
 	// Options:
 	// int     depth (required)
 	// string  path
+	//
+	// Arguments:
+	// string  query
 }
 
 func makeCmd() *conq.Cmd {

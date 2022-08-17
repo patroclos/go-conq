@@ -47,40 +47,85 @@ func (basicHelper) Help(sub HelpSubject) (help string) {
 		b.WriteString("\n")
 	}
 
-	if len(sub.Cmd.Opts) == 0 {
-		return
+	if len(sub.Cmd.Opts) > 0 {
+		var sorted []conq.Opter
+		var required []conq.Opter
+		for _, opt := range sub.Cmd.Opts {
+			if opt.Opt().Require {
+				required = append(required, opt)
+				continue
+			}
+			sorted = append(sorted, opt)
+		}
+		sorted = append(required, sorted...)
+		// required options sorted to top
+		b.WriteString("Options:\n")
+		var longest int
+		for _, opt := range sorted {
+			o := opt.Opt()
+			if l := len(o.Type.Name()); longest < l {
+				longest = l
+			}
+		}
+		format := fmt.Sprintf("%%%dv  ", -longest)
+		for _, opt := range sorted {
+			o := opt.Opt()
+			if o.Type != nil {
+				fmt.Fprintf(&b, format, o.Type.Name())
+			}
+			switch o.Require {
+			case true:
+				fmt.Fprintf(&b, "%s (required)\n", o.Name)
+			case false:
+				fmt.Fprintf(&b, "%s\n", o.Name)
+			}
+		}
 	}
 
-	var sorted []conq.Opter
-	var required []conq.Opter
-	for _, opt := range sub.Cmd.Opts {
-		if opt.Opt().Require {
-			required = append(required, opt)
-			continue
+	if len(sub.Cmd.Args) > 0 {
+
+		fmt.Fprintf(&b, "\nArguments:\n")
+		var longest int
+		for _, arg := range sub.Cmd.Args {
+			if l := len(arg.Opt().Name); l > longest {
+				longest = l
+			}
 		}
-		sorted = append(sorted, opt)
+		format := fmt.Sprintf("%%%dv  ", -longest)
+		for _, arg := range sub.Cmd.Args {
+			o := arg.Opt()
+			if o.Type != nil {
+				fmt.Fprintf(&b, format, o.Type.Name())
+			}
+			switch o.Require {
+			case true:
+				fmt.Fprintf(&b, "%s\n", o.Name)
+			case false:
+				fmt.Fprintf(&b, "%s (optional)\n", o.Name)
+			}
+		}
 	}
-	sorted = append(required, sorted...)
-	// required options sorted to top
-	b.WriteString("Options:\n")
-	var longest int
-	for _, opt := range sorted {
-		o := opt.Opt()
-		if l := len(o.Type.Name()); longest < l {
-			longest = l
+
+	if len(sub.Cmd.Env) > 0 {
+		fmt.Fprintf(&b, "\nEnvironment Variables:\n")
+		var longest int
+		for _, arg := range sub.Cmd.Env {
+			if l := len(arg.Opt().Name); l > longest {
+				longest = l
+			}
 		}
-	}
-	format := fmt.Sprintf("%%%dv  ", -longest)
-	for _, opt := range sorted {
-		o := opt.Opt()
-		if o.Type != nil {
-			fmt.Fprintf(&b, format, o.Type.Name())
-		}
-		switch o.Require {
-		case true:
-			fmt.Fprintf(&b, "%s (required)\n", o.Name)
-		case false:
-			fmt.Fprintf(&b, "%s\n", o.Name)
+		format := fmt.Sprintf("%%%dv  ", -longest)
+		for _, arg := range sub.Cmd.Env {
+			o := arg.Opt()
+			if o.Type != nil {
+				fmt.Fprintf(&b, format, o.Type.Name())
+			}
+			switch o.Require {
+			case true:
+				fmt.Fprintf(&b, "%s (required)\n", o.Name)
+			case false:
+				fmt.Fprintf(&b, "%s\n", o.Name)
+			}
 		}
 	}
 

@@ -10,6 +10,8 @@ import (
 	"golang.org/x/text/message"
 )
 
+// only returns true when f has a `Stat()(fs.FileInfo,error)` method that designates
+// it as a `os.ModeCharDevice`
 func IsTerm(f interface{}) bool {
 	s, ok := f.(interface{ Stat() (fs.FileInfo, error) })
 	if !ok {
@@ -22,6 +24,7 @@ func IsTerm(f interface{}) bool {
 	return st.Mode()&os.ModeCharDevice == os.ModeCharDevice
 }
 
+// A Ctx value that uses stdin,out,err, the os.Args and a locale-sensitive message.Printer
 func OSContext() Ctx {
 	return Ctx{
 		In:      os.Stdin,
