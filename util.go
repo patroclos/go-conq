@@ -25,12 +25,15 @@ func IsTerm(f interface{}) bool {
 }
 
 // A Ctx value that uses stdin,out,err, the os.Args and a locale-sensitive message.Printer
-func OSContext() Ctx {
+func OSContext(args ...string) Ctx {
+	if len(args) == 0 {
+		args = os.Args[1:]
+	}
 	return Ctx{
 		In:      os.Stdin,
 		Out:     os.Stdout,
 		Err:     os.Stderr,
-		Args:    os.Args[1:],
+		Args:    args,
 		Printer: ctxPrinter(),
 	}
 }

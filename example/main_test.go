@@ -30,14 +30,3 @@ func TestUnansiCommand(t *testing.T) {
 		t.Errorf("expected colorful, got %q", output)
 	}
 }
-
-func ExampleShortFlag() {
-	com := commander.New(getopt.New(), aid.DefaultHelp)
-	cmd := New()
-	ctx := conq.OSContext()
-	ctx.Args = []string{"help", "-v"}
-
-	if err := com.Execute(cmd, ctx); err != nil {
-		panic(err)
-	}
-}

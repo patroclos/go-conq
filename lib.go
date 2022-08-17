@@ -63,7 +63,7 @@ type O struct {
 	// should invoking a command fail, if this option isn't set?
 	Require bool
 	// a parser for the string extracted from the shell arguments
-	Parse func(string) (interface{}, error)
+	Parse func(string) (any, error)
 	// describes the type of results returned by Parse
 	Type reflect.Type
 	// shell-completion

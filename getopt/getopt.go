@@ -69,10 +69,30 @@ a:
 			continue
 		}
 
+		// handle single-character options
 		for _, opt := range opts {
 			o := opt.Opt()
 			for _, name := range strings.Split(o.Name, ",") {
 				if len(name) == 1 {
+					{
+						shortName := fmt.Sprintf("-%s=", name)
+						if strings.HasPrefix(arg, shortName) {
+							val := arg[len(shortName):]
+							switch o.Parse {
+							case nil:
+								ctx.Values[o.Name] = val
+								ctx.Strings[o.Name] = val
+							default:
+								v2, err := o.Parse(val)
+								if err != nil {
+									return ctx, fmt.Errorf("parsing option %q failed: %w", o.Name, err)
+								}
+								ctx.Values[o.Name] = v2
+								ctx.Strings[o.Name] = val
+							}
+							continue a
+						}
+					}
 					if arg != fmt.Sprintf("-%s", name) {
 						continue
 					}
@@ -125,15 +145,15 @@ a:
 
 				switch o.Parse {
 				case nil:
-					ctx.Values[n] = v
-					ctx.Strings[n] = v
+					ctx.Values[o.Name] = v
+					ctx.Strings[o.Name] = v
 				default:
 					v2, err := o.Parse(v)
 					if err != nil {
-						return ctx, fmt.Errorf("parsing option %q failed: %w", n, err)
+						return ctx, fmt.Errorf("parsing option %q failed: %w", o.Name, err)
 					}
-					ctx.Values[n] = v2
-					ctx.Strings[n] = v
+					ctx.Values[o.Name] = v2
+					ctx.Strings[o.Name] = v
 				}
 				continue a
 			}
