@@ -4,30 +4,24 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/patroclos/go-conq"
 )
 
-var DefaultHelp Helper = basicHelper{}
-
-type HelpSubject struct {
-	Cmd *conq.Cmd
-	Opt *conq.O
-	Ctx *conq.Ctx
-}
-
-type Helper interface {
-	Help(HelpSubject) string
-}
+var DefaultHelp conq.Helper = basicHelper{}
 
 type basicHelper struct{}
 
-func (basicHelper) Help(sub HelpSubject) (help string) {
+func (basicHelper) Help(sub conq.HelpSubject) (help string) {
 	var b strings.Builder
 	defer func() {
 		help = b.String()
 	}()
 
-	fmt.Fprintf(&b, "usage: %s [options]", sub.Cmd.Name)
+	fmt.Fprintf(&b, "usage: %s", sub.Cmd.Name)
+	if len(sub.Cmd.Opts) > 0 {
+		fmt.Fprint(&b, " [options]")
+	}
 	for _, arg := range sub.Cmd.Args {
 		o := arg.Opt()
 		switch o.Require {
@@ -37,15 +31,9 @@ func (basicHelper) Help(sub HelpSubject) (help string) {
 			fmt.Fprintf(&b, " [%s]", o.Name)
 		}
 	}
-	b.WriteString("\n")
+	b.WriteString("\n\n")
 
-	if len(sub.Cmd.Commands) > 0 {
-		fmt.Fprintf(&b, "Commands: %s", sub.Cmd.Commands[0].Name)
-		for _, c := range sub.Cmd.Commands[1:] {
-			fmt.Fprintf(&b, ", %s", c.Name)
-		}
-		b.WriteString("\n")
-	}
+	headlineStyle := color.New(color.Bold, color.Underline)
 
 	if len(sub.Cmd.Opts) > 0 {
 		var sorted []conq.Opter
@@ -59,7 +47,7 @@ func (basicHelper) Help(sub HelpSubject) (help string) {
 		}
 		sorted = append(required, sorted...)
 		// required options sorted to top
-		b.WriteString("Options:\n")
+		headlineStyle.Fprint(&b, "Options:\n")
 		var longest int
 		for _, opt := range sorted {
 			o := opt.Opt()
@@ -84,7 +72,7 @@ func (basicHelper) Help(sub HelpSubject) (help string) {
 
 	if len(sub.Cmd.Args) > 0 {
 
-		fmt.Fprintf(&b, "\nArguments:\n")
+		headlineStyle.Fprint(&b, "\nArguments:\n")
 		var longest int
 		for _, arg := range sub.Cmd.Args {
 			if l := len(arg.Opt().Name); l > longest {
@@ -104,6 +92,15 @@ func (basicHelper) Help(sub HelpSubject) (help string) {
 				fmt.Fprintf(&b, "%s (optional)\n", o.Name)
 			}
 		}
+	}
+
+	if len(sub.Cmd.Commands) > 0 {
+		headlineStyle.Fprint(&b, "Commands")
+		fmt.Fprintf(&b, ": %s", sub.Cmd.Commands[0].Name)
+		for _, c := range sub.Cmd.Commands[1:] {
+			fmt.Fprintf(&b, ", %s", c.Name)
+		}
+		b.WriteString("\n")
 	}
 
 	if len(sub.Cmd.Env) > 0 {

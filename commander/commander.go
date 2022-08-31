@@ -6,17 +6,16 @@ import (
 	"strings"
 
 	"github.com/patroclos/go-conq"
-	"github.com/patroclos/go-conq/aid"
 	"golang.org/x/text/message"
 )
 
 type Commander struct {
 	O conq.Optioner
-	H aid.Helper
+	H conq.Helper
 	P *message.Printer
 }
 
-func New(o conq.Optioner, h aid.Helper) Commander {
+func New(o conq.Optioner, h conq.Helper) Commander {
 	return Commander{
 		O: o,
 		H: h,
@@ -27,7 +26,7 @@ func (c Commander) Optioner() conq.Optioner {
 	return c.O
 }
 
-func (c Commander) Helper() aid.Helper {
+func (c Commander) Helper() conq.Helper {
 	return c.H
 }
 

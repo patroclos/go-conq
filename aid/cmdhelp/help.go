@@ -7,21 +7,13 @@ import (
 	"text/template"
 
 	"github.com/patroclos/go-conq"
-	"github.com/patroclos/go-conq/aid"
 )
-
-var OptVerbose = conq.Opt[bool]{Name: "verbose,v"}
 
 func New(helpdir fs.FS) *conq.Cmd {
 	return &conq.Cmd{
 		Name: "help",
-		Opts: conq.Opts{OptVerbose},
 		Run: func(c conq.Ctx) error {
-			if _, err := OptVerbose.Get(c); err == nil {
-				c.Printer.Fprintf(c.Err, "VERBOSE MODE Command:%q Values: %v\n", c.Path[len(c.Path)-1].Name, c.Values)
-			}
-
-			subj := aid.HelpSubject{Cmd: c.Path[0]}
+			subj := conq.HelpSubject{Cmd: c.Path[0]}
 			if helpdir != nil {
 				if err := printSection(helpdir, c); err == nil {
 					return nil
@@ -42,7 +34,7 @@ func New(helpdir fs.FS) *conq.Cmd {
 				return fmt.Errorf("attempted to resolve unknown command %q on %s", c.Args[0], subj.Cmd.Name)
 			}
 
-			if hl, ok := c.Com.(interface{ Helper() aid.Helper }); ok {
+			if hl, ok := c.Com.(interface{ Helper() conq.Helper }); ok {
 				fmt.Fprintf(c.Out, "%s\n", hl.Helper().Help(subj))
 				return nil
 			}
