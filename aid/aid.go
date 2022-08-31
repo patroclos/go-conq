@@ -95,7 +95,7 @@ func (basicHelper) Help(sub conq.HelpSubject) (help string) {
 	}
 
 	if len(sub.Cmd.Commands) > 0 {
-		headlineStyle.Fprint(&b, "Commands")
+		headlineStyle.Fprint(&b, "\nCommands")
 		fmt.Fprintf(&b, ": %s", sub.Cmd.Commands[0].Name)
 		for _, c := range sub.Cmd.Commands[1:] {
 			fmt.Fprintf(&b, ", %s", c.Name)
