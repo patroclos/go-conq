@@ -32,13 +32,15 @@ func ExampleDefaultHelp() {
 		panic(err)
 	}
 	// Output: usage: app [options] query
-	// Commands: help
+	//
 	// Options:
 	// int     depth (required)
 	// string  path
 	//
 	// Arguments:
 	// string  query
+	//
+	// Commands: help
 }
 
 func makeCmd() *conq.Cmd {
